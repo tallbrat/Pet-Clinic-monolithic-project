@@ -1,8 +1,3 @@
-
-variable "availability_zones" {
-  type = string
-  default = [ "us-east-1a" ]
-}
 # Create VPC
 resource "aws_vpc" "my_vpc" {
   cidr_block = "10.0.0.0/16"
