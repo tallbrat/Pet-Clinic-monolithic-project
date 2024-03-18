@@ -1,0 +1,65 @@
+
+---
+- name: Install Tomcat server
+  hosts: app-server
+  become: yes
+  vars:
+    tomcat_user: tomcat
+    tomcat_install_dir: /opt/tomcat
+    tomcat_version: "10.1.19"
+    tomcat_download_url: "https://dlcdn.apache.org/tomcat/tomcat-10/v{{ tomcat_version }}/bin/apache-tomcat-{{ tomcat_version }}.tar.gz"
+    tomcat_tarball: "apache-tomcat-{{ tomcat_version }}.tar.gz"
+    tomcat_tarball_path: "/tmp/{{ tomcat_tarball }}"
+    tomcat_extracted_dir: "apache-tomcat-{{ tomcat_version }}"
+    war_file_path: ./../spring-framework-petclinic/target/petclinic.war
+  tasks:
+    - name: Create tomcat user
+      user:
+        name: "{{ tomcat_user }}"
+        home: "{{ tomcat_install_dir }}"
+        shell: /bin/false
+        system: yes
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install default-jdk
+      apt:
+        name: default-jdk
+        state: present
+
+    - name: Download Tomcat tarball
+      get_url:
+        url: "{{ tomcat_download_url }}"
+        dest: "{{ tomcat_tarball_path }}"
+        checksum: sha512:7264da6196a510b0bba74469d215d61a464331302239256477f78b6bec067f7f4d90f671b96a440061ae0e20d16b1be8ca1dbd547dab9927383366dbc677f590
+
+    - name: Extract Tomcat tarball
+      unarchive:
+        src: "{{ tomcat_tarball_path }}"
+        dest: "{{ tomcat_install_dir }}"
+        remote_src: yes
+        extra_opts: --strip-components=1
+        owner: "{{ tomcat_user }}"
+        group: "{{ tomcat_user }}"
+
+    - name: Set ownership for Tomcat directory
+      file:
+        path: "{{ tomcat_install_dir }}"
+        owner: "{{ tomcat_user }}"
+        group: "{{ tomcat_user }}"
+        recurse: yes
+
+    - name: Set execute permissions for Tomcat scripts
+      file:
+        path: "{{ tomcat_install_dir }}/bin"
+        mode: u+x
+        recurse: yes
+
+    - name: Deploy Petclinic WAR
+      copy:
+        src: "{{ war_file_path }}"
+        dest: /opt/tomcat/webapps/petclinic.war
+        owner: tomcat
+        group: tomcat

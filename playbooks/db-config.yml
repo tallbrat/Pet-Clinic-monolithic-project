@@ -1,0 +1,40 @@
+---
+- name: Install MySQL, create user, and database for petclinic
+  hosts: db-server
+  become: yes
+  vars_files:
+    - db-cred.yml
+  vars:
+    mysql_user: petclinic
+    mysql_database: petclinic
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install MySQL
+      apt:
+        name: mysql-server
+        state: present
+        update_cache: yes
+
+    - name: Set MySQL root password
+      mysql_user:
+        login_user: root
+        login_password: ""
+        password: "{{ mysql_root_password }}"
+        host: localhost
+
+    - name: Create MySQL user
+      mysql_user:
+        name: "{{ mysql_user }}"
+        password: "{{ mysql_user_password }}"
+        priv: "{{ mysql_database }}.*:ALL"
+        host: localhost
+
+    - name: Create MySQL database
+      mysql_db:
+        name: "{{ mysql_database }}"
+        state: present
+        login_user: root
+        login_password: "{{ mysql_root_password }}"

@@ -1,0 +1,35 @@
+---
+- name: Install Nginx and start the service
+  hosts: proxy-server
+  become: yes
+  vars:
+    nginx_config_src: /reverse-proxy.conf
+    nginx_config_dest: /etc/nginx/sites-enabled/default
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: present
+        update_cache: yes
+
+    - name: Copy reverse proxy configuration file
+      copy:
+        src: "{{ nginx_config_src }}"
+        dest: "{{ nginx_config_dest }}"
+      notify: Reload Nginx
+
+    - name: Start Nginx service
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+
+    handlers:
+    - name: Reload Nginx
+      service:
+        name: nginx
+        state: reloaded
